@@ -41,6 +41,7 @@ public class GUI {
     public class SimPanel extends JPanel implements MouseListener, MouseMotionListener {
 
         private Node selectedNode;
+        private Simulator simulator = new Simulator(getWidth(), getHeight(), Controller.node1, Controller.node2);
 
 
         public SimPanel(){
@@ -51,8 +52,8 @@ public class GUI {
         public void paintComponent(Graphics g){
             Graphics2D g2d = (Graphics2D) g;
 
-            drawCenterCircle(Controller.node1.x, Controller.node1.y, nodeDiam, g2d, Controller.node1.color);
-            drawCenterCircle(Controller.node2.x, Controller.node2.y, nodeDiam, g2d, Controller.node2.color);
+            drawCenterCircle(Controller.node1.x, Controller.node1.y, nodeDiam, g, Controller.node1.color);
+            drawCenterCircle(Controller.node2.x, Controller.node2.y, nodeDiam, g, Controller.node2.color);
 
         }
 
@@ -96,7 +97,9 @@ public class GUI {
 
         @Override
         public void mouseDragged(MouseEvent e) {
-
+            selectedNode.x = e.getX();
+            selectedNode.y = e.getY();
+            this.repaint();
         }
 
         @Override
