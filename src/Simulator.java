@@ -24,6 +24,7 @@ public class Simulator {
     private int node2_prevY = -1;
 
     public Simulator(int width, int height, Node node1, Node node2){
+
         pixelArray = new double[width][height];
 
         this.width = width;
@@ -63,8 +64,8 @@ public class Simulator {
         double node1_distance = Math.sqrt(node1_xPixelArray[x_point] + node1_yPixelArray[y_point]);
         double node2_distance = Math.sqrt(node2_xPixelArray[x_point] + node2_yPixelArray[y_point]);
 
-        double node1_offset = node1_distance % Controller.wavelength;
-        double node2_offset = node2_distance % Controller.wavelength;
+        double node1_offset = (node1_distance / Controller.wavelength) % 1;
+        double node2_offset = (node2_distance / Controller.wavelength) % 1;
 
         if(node1_offset > node2_offset){
             node2_offset ++;

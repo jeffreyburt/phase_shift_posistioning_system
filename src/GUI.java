@@ -41,17 +41,32 @@ public class GUI {
     public class SimPanel extends JPanel implements MouseListener, MouseMotionListener {
 
         private Node selectedNode;
-        private Simulator simulator = new Simulator(getWidth(), getHeight(), Controller.node1, Controller.node2);
+        private final Simulator simulator;
 
 
         public SimPanel(){
-            this.setBackground(Color.BLACK);
-
+            //this.setBackground(Color.BLACK);
+            setSize(new Dimension(Controller.width, Controller.height));
+            simulator = new Simulator(this.getWidth(), this.getHeight(), Controller.node1, Controller.node2);
         }
 
         public void paintComponent(Graphics g){
             super.paintComponent(g);
             Graphics2D g2d = (Graphics2D) g;
+
+            double[][] pixel_array = simulator.pixelArray;
+            //todo this may not work
+
+            for (int x = 0; x < pixel_array.length; x++) {
+                for (int y = 0; y < pixel_array[x].length; y++) {
+                    Color color = new Color((float) pixel_array[x][y],(float) 0.0,(float) 0.0);
+                    //drawCenterCircle(x,y,1,g, color);
+                    g.setColor(color);
+                    g.drawLine(x,y,x,y);
+                }
+            }
+
+
 
             drawCenterCircle(Controller.node1.x, Controller.node1.y, nodeDiam, g, Controller.node1.color);
             drawCenterCircle(Controller.node2.x, Controller.node2.y, nodeDiam, g, Controller.node2.color);
@@ -65,7 +80,6 @@ public class GUI {
 
         @Override
         public void mousePressed(MouseEvent e) {
-            System.out.println("hmm");
             double node1Distance = calcDistance(Controller.node1, e);
             double node2Distance = calcDistance(Controller.node2, e);
 
@@ -83,6 +97,7 @@ public class GUI {
         public void mouseReleased(MouseEvent e) {
             selectedNode.color = normalNodeColor;
             selectedNode = null;
+            simulator.recalculate();
             this.repaint();
         }
 
