@@ -50,6 +50,7 @@ public class GUI {
         }
 
         public void paintComponent(Graphics g){
+            super.paintComponent(g);
             Graphics2D g2d = (Graphics2D) g;
 
             drawCenterCircle(Controller.node1.x, Controller.node1.y, nodeDiam, g, Controller.node1.color);
