@@ -23,7 +23,12 @@ public class Simulator {
     private int node2_prevX = -1;
     private int node2_prevY = -1;
 
-    public Simulator(int width, int height, Node node1, Node node2){
+    private Coordinate scaled_cord_origin = new Coordinate(0,0);
+    private double scale_ratio = 1;
+
+    private final GUI gui;
+
+    public Simulator(int width, int height, Node node1, Node node2, GUI gui){
 
         pixelArray = new double[width][height];
 
@@ -31,6 +36,7 @@ public class Simulator {
         this.height = height;
         this.node1 = node1;
         this.node2 = node2;
+        this.gui = gui;
 
         node1_xPixelArray = new double[width];
         node1_yPixelArray = new double[height];
@@ -58,6 +64,11 @@ public class Simulator {
                 pixelArray[i][j] = calcOffset(i,j);
             }
         }
+    }
+
+    public void scale(Coordinate scaled_coordinate_origin, double scale_ratio){
+        this.scaled_cord_origin = scaled_coordinate_origin;
+        this.scale_ratio = scale_ratio;
     }
 
     private double calcOffset(int x_point, int y_point){

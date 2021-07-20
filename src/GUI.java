@@ -12,9 +12,10 @@ public class GUI {
     private Color normalNodeColor = Color.blue;
 
     //how fast/extent of scale changes
-    private double scale_multiplier = 0.125;
+    private double scale_step = 0.005;
 
     //ratio of display pixels to simulator pixels
+    //e.g. a 2x zoom will have 2 scale pixels per simulator pixel and a scale ratio of 2
     private double scale_ratio;
 
     //width of the scale window in the base coordinate system
@@ -30,7 +31,7 @@ public class GUI {
     public GUI(){
         JFrame mainFrame = new JFrame("signal offset");
         JPanel mainPanel = new JPanel(new BorderLayout());
-        simPanel = new SimPanel();
+        simPanel = new SimPanel(this);
 
         mainPanel.add(simPanel, BorderLayout.CENTER);
         mainFrame.setPreferredSize(new Dimension(Controller.width,Controller.height));
@@ -59,7 +60,7 @@ public class GUI {
         private final Simulator simulator;
 
 
-        public SimPanel(){
+        public SimPanel(GUI gui){
             //this.setBackground(Color.BLACK);
             setSize(new Dimension(Controller.width, Controller.height));
 
@@ -69,7 +70,7 @@ public class GUI {
             scale_window_origin_y = 0;
             scale_ratio = 1;
 
-            simulator = new Simulator(this.getWidth(), this.getHeight(), Controller.node1, Controller.node2);
+            simulator = new Simulator(this.getWidth(), this.getHeight(), Controller.node1, Controller.node2, gui);
 
         }
 
@@ -77,26 +78,37 @@ public class GUI {
             super.paintComponent(g);
             Graphics2D g2d = (Graphics2D) g;
 
+
             double[][] pixel_array = simulator.pixelArray;
             //todo this may not work
 
             for (int x = 0; x < pixel_array.length; x++) {
+                g2d.setStroke(new BasicStroke(1));
                 for (int y = 0; y < pixel_array[x].length; y++) {
                     Color color = new Color((float) pixel_array[x][y],(float) 0.0,(float) 0.0);
                     //drawCenterCircle(x,y,1,g, color);
-                    g.setColor(color);
-                    g.drawLine(x,y,x,y);
+                    g2d.setColor(color);
+                    g2d.drawLine(x,y,x,y);
                 }
-                g.setColor(Color.GREEN);
-                g.drawRect((int) scale_window_origin_x, (int) scale_window_origin_y,
+                g2d.setStroke(new BasicStroke(2));
+                g2d.setColor(Color.GREEN);
+                g2d.drawRect((int) scale_window_origin_x, (int) scale_window_origin_y,
                         (int) scale_window_width, (int) scale_window_height);
             }
 
 
+            Coordinate node_1_coordinate = convert_to_scaled_cords(new Coordinate(Controller.node1));
+            Coordinate node_2_coordinate = convert_to_scaled_cords(new Coordinate(Controller.node2));
+            drawCenterCircle(node_1_coordinate.x, node_1_coordinate.y, nodeDiam, g, Controller.node1.color);
+            drawCenterCircle(node_2_coordinate.x, node_2_coordinate.y, nodeDiam, g, Controller.node2.color);
 
-            drawCenterCircle(Controller.node1.x, Controller.node1.y, nodeDiam, g, Controller.node1.color);
-            drawCenterCircle(Controller.node2.x, Controller.node2.y, nodeDiam, g, Controller.node2.color);
+        }
 
+        private Coordinate convert_to_scaled_cords(Coordinate sim_coordinate){
+            double x = (sim_coordinate.x * scale_ratio) - scale_window_origin_x;
+            double y = (sim_coordinate.y * scale_ratio) - scale_window_origin_y;
+
+            return new Coordinate(x,y);
         }
 
         @Override
@@ -111,11 +123,10 @@ public class GUI {
 
             if(node1Distance <= node2Distance){
                 selectedNode = Controller.node1;
-                selectedNode.color = selectedNodeColor;
             }else {
                 selectedNode = Controller.node2;
-                selectedNode.color = selectedNodeColor;
             }
+            selectedNode.color = selectedNodeColor;
             this.repaint();
         }
 
@@ -152,32 +163,73 @@ public class GUI {
         @Override
         public void mouseWheelMoved(MouseWheelEvent e) {
             System.out.println(e.getPreciseWheelRotation());
+            rescale(e);
+            this.repaint();
         }
 
-        //posative scale factor zooms in
+        //positive scale factor zooms in
         private void rescale(MouseWheelEvent e){
             double scaleFactor;
             if(e.getPreciseWheelRotation() > 0){
-                scaleFactor = (1/e.getPreciseWheelRotation()) * scale_multiplier;
+                //zooming out
+                scaleFactor = 1 + scale_step;
             }else if(e.getPreciseWheelRotation() < 0){
-                scaleFactor = ((1/Math.abs(e.getPreciseWheelRotation())) * scale_multiplier) + 1;
+                //zooming in
+                scaleFactor = 1 - scale_step;
             }else {
+                //error catch: really shouldn't happen
                 scaleFactor = 1;
             }
 
-            //relative scale offset calculations
-            double left_relative_offset = e.getX() / this.getWidth();
-            double right_relative_offset = 1 - left_relative_offset;
-
-            double top_relative_offset = e.getY()/ this.getWidth();
-            double bottom_relative_offset = 1 - top_relative_offset;
+            //calculating the location of the mouse in the simulator coordinate grid
+            Coordinate simulator_mouse_cord = convert_cord_to_sim(new Coordinate(e));
 
 
+            scale_window_height *= scaleFactor;
+            scale_window_width *= scaleFactor;
+            scale_ratio /= scaleFactor;
+            System.out.println("Scale factor: " + scale_ratio);
+            System.out.println("Scaled Width: " + scale_window_width);
+
+            //calculating the new location of the mouse after the window has been scaled
+            Coordinate new_mouse_location = convert_cord_to_sim(new Coordinate(e));
+
+            double x_offset = new_mouse_location.x - simulator_mouse_cord.x;
+            double y_offset = new_mouse_location.y - simulator_mouse_cord.y;
+
+            scale_window_origin_x -= x_offset;
+            scale_window_origin_y -= y_offset;
+
+
+
+            //new position calculations
+            //note this is made difficult by all mouse positions being in the scaled cord system
+            /*
+            so just to repeat this process to myself again, I need to move the scaled window so that the mouse stays in the same
+            relative position in the scaled window. In other words, the mouse or window can appear to move at all
+            in order to do this I need the mouse's position in the simulator coordinate space
+            once I have that I can do some semi fancy math to move the zoomed window so that
+            the mouse's coordinate in the zoomed windows stays at the mouse's coordinate in the simulator window
+
+            Order of operations:
+            record mice coordinate in the scaled window
+            convert that saved Coordinate to a coordinate in the simulator cord system
+            TODO this should be done before scaling done above
+
+
+             */
 
 
 
 
 
+        }
+
+        private Coordinate convert_cord_to_sim(Coordinate scaled_cord){
+            double x_cord = (scaled_cord.x / scale_ratio) + scale_window_origin_x;
+            double y_cord = (scaled_cord.y / scale_ratio) + scale_window_origin_y;
+
+            return new Coordinate(x_cord, y_cord);
         }
 
 
