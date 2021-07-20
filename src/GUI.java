@@ -16,17 +16,17 @@ public class GUI {
 
     //ratio of display pixels to simulator pixels
     //e.g. a 2x zoom will have 2 scale pixels per simulator pixel and a scale ratio of 2
-    private double scale_ratio;
+    public double scale_ratio;
 
     //width of the scale window in the base coordinate system
-    private double scale_window_width;
+    public double scale_window_width;
 
     //height of the scaled window in the base coordinate system
-    private double scale_window_height;
+    public double scale_window_height;
 
     //top left corner coordinate of the scale window in the base coordinate system
-    private double scale_window_origin_x;
-    private double scale_window_origin_y;
+    public double scale_window_origin_x;
+    public double scale_window_origin_y;
 
     public GUI(){
         JFrame mainFrame = new JFrame("signal offset");
@@ -99,6 +99,7 @@ public class GUI {
 
             Coordinate node_1_coordinate = convert_to_scaled_cords(new Coordinate(Controller.node1));
             Coordinate node_2_coordinate = convert_to_scaled_cords(new Coordinate(Controller.node2));
+
             drawCenterCircle(node_1_coordinate.x, node_1_coordinate.y, nodeDiam, g, Controller.node1.color);
             drawCenterCircle(node_2_coordinate.x, node_2_coordinate.y, nodeDiam, g, Controller.node2.color);
 
@@ -164,6 +165,7 @@ public class GUI {
         public void mouseWheelMoved(MouseWheelEvent e) {
             System.out.println(e.getPreciseWheelRotation());
             rescale(e);
+            simulator.recalculate();
             this.repaint();
         }
 
