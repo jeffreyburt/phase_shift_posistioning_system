@@ -10,9 +10,10 @@ public class GUI {
     private int nodeDiam = 20;
     private Color selectedNodeColor = Color.green;
     private Color normalNodeColor = Color.blue;
+    private Coordinate prev_mouse_cord;
 
     //how fast/extent of scale changes
-    private double scale_step = 0.005;
+    private double scale_step = 0.025;
 
     //ratio of display pixels to simulator pixels
     //e.g. a 2x zoom will have 2 scale pixels per simulator pixel and a scale ratio of 2
@@ -100,14 +101,22 @@ public class GUI {
             Coordinate node_1_coordinate = convert_to_scaled_cords(new Coordinate(Controller.node1));
             Coordinate node_2_coordinate = convert_to_scaled_cords(new Coordinate(Controller.node2));
 
+            Coordinate test_cord = convert_to_scaled_cords(new Coordinate(750,500));
+            drawCenterCircle(test_cord.x, test_cord.y,nodeDiam, g, Color.GREEN);
+
             drawCenterCircle(node_1_coordinate.x, node_1_coordinate.y, nodeDiam, g, Controller.node1.color);
             drawCenterCircle(node_2_coordinate.x, node_2_coordinate.y, nodeDiam, g, Controller.node2.color);
+
+
+            System.out.println();
+            System.out.println(new Coordinate(Controller.node1 ));
+            System.out.println(node_1_coordinate);
 
         }
 
         private Coordinate convert_to_scaled_cords(Coordinate sim_coordinate){
-            double x = (sim_coordinate.x * scale_ratio) - scale_window_origin_x;
-            double y = (sim_coordinate.y * scale_ratio) - scale_window_origin_y;
+            double x = (sim_coordinate.x - scale_window_origin_x) * scale_ratio;
+            double y = (sim_coordinate.y - scale_window_origin_y) * scale_ratio;
 
             return new Coordinate(x,y);
         }
@@ -119,24 +128,31 @@ public class GUI {
 
         @Override
         public void mousePressed(MouseEvent e) {
-            double node1Distance = calcDistance(Controller.node1, e);
-            double node2Distance = calcDistance(Controller.node2, e);
+            if(SwingUtilities.isLeftMouseButton(e)) {
+                double node1Distance = calcDistance(Controller.node1, e);
+                double node2Distance = calcDistance(Controller.node2, e);
 
-            if(node1Distance <= node2Distance){
-                selectedNode = Controller.node1;
-            }else {
-                selectedNode = Controller.node2;
+                if (node1Distance <= node2Distance) {
+                    selectedNode = Controller.node1;
+                } else {
+                    selectedNode = Controller.node2;
+                }
+                selectedNode.color = selectedNodeColor;
+                this.repaint();
+            } else {
+              prev_mouse_cord = new Coordinate(e);
+              System.out.println("right click!");
             }
-            selectedNode.color = selectedNodeColor;
-            this.repaint();
         }
 
         @Override
         public void mouseReleased(MouseEvent e) {
-            selectedNode.color = normalNodeColor;
-            selectedNode = null;
-            simulator.recalculate();
-            this.repaint();
+            if (SwingUtilities.isLeftMouseButton(e)) {
+                selectedNode.color = normalNodeColor;
+                selectedNode = null;
+                simulator.recalculate();
+                this.repaint();
+            }
         }
 
         @Override
@@ -151,8 +167,20 @@ public class GUI {
 
         @Override
         public void mouseDragged(MouseEvent e) {
-            selectedNode.x = e.getX();
-            selectedNode.y = e.getY();
+            if(SwingUtilities.isLeftMouseButton(e)) {
+                selectedNode.x = e.getX();
+                selectedNode.y = e.getY();
+            }else {
+                Coordinate new_mouse_cord = new Coordinate(e);
+                double change_x = (new_mouse_cord.x - prev_mouse_cord.x) / scale_ratio;
+                scale_window_origin_x -= change_x;
+
+                double change_y = (new_mouse_cord.y - prev_mouse_cord.y) / scale_ratio;
+                scale_window_origin_y -= change_y;
+
+                System.out.println("Scale ratio (from panning) " + scale_ratio);
+                simulator.recalculate();
+            }
             this.repaint();
         }
 

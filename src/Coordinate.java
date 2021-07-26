@@ -18,4 +18,8 @@ public class Coordinate {
         x = node.x;
         y = node.y;
     }
+
+    public String toString(){
+        return "("+ (int) x +","+ (int) y + ")";
+    }
 }

@@ -9,7 +9,7 @@ public class Controller {
     public static int height = 1000;
 
     public static int metersBetweenNodes = 5000;
-    public static double wavelengths_between_nodes = 50000;
+    public static double wavelengths_between_nodes = 50;
     public static double wavelength = metersBetweenNodes / wavelengths_between_nodes;
     public static double frequency = 299792458 / wavelength; //speed of light divided by wavelength
 
